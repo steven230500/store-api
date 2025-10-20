@@ -9,11 +9,11 @@ const schema = z.object({
   POSTGRES_USER: z.string(),
   POSTGRES_PASSWORD: z.string(),
 
-  WOMPI_BASE_URL: z.string().url(),
-  WOMPI_PUBLIC_KEY: z.string(),
-  WOMPI_PRIVATE_KEY: z.string(),
-  WOMPI_EVENTS_KEY: z.string(),
-  WOMPI_INTEGRITY_KEY: z.string(),
+  WOMPI_BASE_URL: z.string().url().optional(),
+  WOMPI_PUBLIC_KEY: z.string().optional(),
+  WOMPI_PRIVATE_KEY: z.string().optional(),
+  WOMPI_EVENTS_KEY: z.string().optional(),
+  WOMPI_INTEGRITY_KEY: z.string().optional(),
 });
 
 export default function validate(env: Record<string, unknown>) {

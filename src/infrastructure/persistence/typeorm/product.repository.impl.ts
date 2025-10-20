@@ -83,6 +83,45 @@ export class ProductRepositoryImpl implements ProductRepository {
     );
   }
 
+  async searchByName(
+    query: string,
+    options?: {
+      skip?: number;
+      take?: number;
+      order?: Record<string, 'ASC' | 'DESC'>;
+    },
+  ): Promise<Product[]> {
+    const qb = this.repo
+      .createQueryBuilder('p')
+      .where('LOWER(p.name) LIKE LOWER(:query)', { query: `%${query}%` });
+
+    if (options?.order) {
+      qb.orderBy(options.order);
+    }
+
+    if (options?.skip !== undefined) {
+      qb.skip(options.skip);
+    }
+
+    if (options?.take !== undefined) {
+      qb.take(options.take);
+    }
+
+    const rows = await qb.getMany();
+    return rows.map(
+      (r) =>
+        new Product(
+          r.id,
+          r.name,
+          r.price_in_cents,
+          r.currency,
+          r.stock,
+          r.created_at,
+          r.updated_at,
+        ),
+    );
+  }
+
   async decreaseStock(id: string, qty: number): Promise<void> {
     await this.repo.manager.transaction(async (tx) => {
       const pr = await tx

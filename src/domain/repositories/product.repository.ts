@@ -8,4 +8,8 @@ export interface ProductRepository {
     categoryId: string,
     options?: { skip?: number; take?: number; order?: any },
   ): Promise<Array<Product>>;
+  searchByName(
+    query: string,
+    options?: { skip?: number; take?: number; order?: any },
+  ): Promise<Array<Product>>;
 }
