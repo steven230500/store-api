@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    container_name: wompi_test_db
+    environment:
+      POSTGRES_DB: wompi_challenge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5433:5432"]
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U postgres -d wompi_challenge"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wompi_test_api
+    environment:
+      # Variables locales para pruebas
+      PORT: 3000
+      NODE_ENV: production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: wompi_challenge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      # Wompi keys de ejemplo (no reales)
+      WOMPI_PUBLIC_KEY: pub_test_example
+      WOMPI_PRIVATE_KEY: prv_test_example
+      WOMPI_EVENTS_KEY: test_events_example
+      WOMPI_INTEGRITY_KEY: test_integrity_example
+      WOMPI_BASE_URL: https://sandbox.wompi.co/v1
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["3000:3000"]
+
+volumes:
+  test_db_data:
