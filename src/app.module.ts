@@ -14,7 +14,8 @@ import { OrmConfig } from './infrastructure/persistence/typeorm/typeorm.config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env', 'apps/api/.env'],
+      envFilePath:
+        process.env.NODE_ENV !== 'production' ? ['.env', 'apps/api/.env'] : [],
       validate: envValidation,
     }),
     TypeOrmModule.forRootAsync({ useClass: OrmConfig }),

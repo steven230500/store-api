@@ -2,7 +2,10 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 
-config(); // lee .env
+// Solo carga .env en desarrollo, en producción usa variables de entorno del sistema
+if (process.env.NODE_ENV !== 'production') {
+  config();
+}
 
 // importa todas tus entidades
 import { ProductOrmEntity } from './src/infrastructure/persistence/typeorm/product.orm-entity';
