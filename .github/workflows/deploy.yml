@@ -3,43 +3,46 @@ name: CI/CD - store-api → App Runner
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
 
-env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
-  ECR_REPO: ${{ vars.ECR_REPO }}
-  ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-  SERVICE_ARN: ${{ vars.APP_RUNNER_SERVICE_ARN }}
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPO: ${{ secrets.ECR_REPO }}
+      ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      SERVICE_ARN: ${{ secrets.APP_RUNNER_SERVICE_ARN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.11.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
 
-      - name: Validate required vars
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.11.0
+
+      - name: Validate required env
         run: |
           test -n "${AWS_REGION}" || (echo "AWS_REGION empty"; exit 1)
           test -n "${ECR_REPO}" || (echo "ECR_REPO empty"; exit 1)
           test -n "${ROLE_TO_ASSUME}" || (echo "AWS_ROLE_TO_ASSUME empty"; exit 1)
+          echo "OK: env present"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,8 +50,8 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ vars.AWS_REGION }}
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
 
       - name: Login to ECR
         id: login-ecr
