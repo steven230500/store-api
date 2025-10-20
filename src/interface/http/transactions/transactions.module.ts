@@ -9,6 +9,8 @@ import { TransactionRepositoryImpl } from '../../../infrastructure/persistence/t
   controllers: [TransactionsController],
   providers: [
     { provide: 'TransactionRepository', useClass: TransactionRepositoryImpl },
+    { provide: 'TransactionsController', useClass: TransactionsController },
   ],
+  exports: ['TransactionsController'],
 })
 export class TransactionsModule {}

@@ -11,6 +11,7 @@ import type { Request } from 'express';
 import { FinalizeTransactionUC } from '../../../application/use-cases/finalize-transaction.uc';
 import { REPOSITORY_TOKENS } from '../../../domain/repositories/tokens';
 import type { TransactionRepository } from '../../../domain/repositories/transaction.repository';
+import { TransactionsController } from '../transactions/transactions.controller';
 
 import type { PaymentStatus } from '../../../domain/constants/payment-status';
 
@@ -35,6 +36,8 @@ export class WompiEventsController {
     private readonly finalize: FinalizeTransactionUC,
     @Inject(REPOSITORY_TOKENS.Transaction)
     private readonly txRepo: TransactionRepository,
+    @Inject('TransactionsController')
+    private readonly transactionsController: TransactionsController,
   ) {}
 
   @Post('transactions')
@@ -66,11 +69,18 @@ export class WompiEventsController {
     if (!transaction) return { ok: true };
 
     // Finalizar
-    await this.finalize.execute({
+    const finalizedTx = await this.finalize.execute({
       transactionId: transaction.id,
       status: tx.status,
       productId: transaction.productId,
     });
+
+    // Notificar a clientes SSE conectados
+    this.transactionsController.notifyTransactionUpdate(
+      transaction.id,
+      tx.status,
+      finalizedTx as unknown as Record<string, unknown>,
+    );
 
     return { ok: true };
   }

@@ -8,9 +8,13 @@ import { TransactionRepositoryImpl } from '../../../infrastructure/persistence/t
 import { ProductRepositoryImpl } from '../../../infrastructure/persistence/typeorm/product.repository.impl';
 import { REPOSITORY_TOKENS } from '../../../domain/repositories/tokens';
 import { RawBodyMiddleware } from '../common/raw-body.middleware';
+import { TransactionsModule } from '../transactions/transactions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TransactionOrmEntity, ProductOrmEntity])],
+  imports: [
+    TypeOrmModule.forFeature([TransactionOrmEntity, ProductOrmEntity]),
+    TransactionsModule,
+  ],
   controllers: [WompiEventsController],
   providers: [
     // Implementaciones concretas (deben tener @Injectable())
