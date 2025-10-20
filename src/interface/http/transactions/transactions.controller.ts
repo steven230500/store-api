@@ -21,14 +21,14 @@ export class TransactionsController {
     return tx;
   }
 
-  @Get(':id/events')
-  async sse(@Param('id') id: string, @Res() res: Response) {
+  @Get(':reference/events')
+  async sse(@Param('reference') reference: string, @Res() res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Access-Control-Allow-Origin', '*');
 
-    const tx = await this.txRepo.findById(id);
+    const tx = await this.txRepo.findByReference(reference);
     if (!tx) {
       res
         .status(404)
@@ -39,7 +39,7 @@ export class TransactionsController {
       return;
     }
 
-    this.clients.set(id, res);
+    this.clients.set(tx.id, res);
 
     const initialData = `data: ${JSON.stringify({
       type: 'initial',
@@ -49,7 +49,7 @@ export class TransactionsController {
     res.write(initialData);
 
     res.on('close', () => {
-      this.clients.delete(id);
+      this.clients.delete(tx.id);
     });
 
     const heartbeat = setInterval(() => {
@@ -57,7 +57,7 @@ export class TransactionsController {
         res.write(
           `data: ${JSON.stringify({
             type: 'heartbeat',
-            transactionId: id,
+            transactionId: tx.id,
             timestamp: new Date().toISOString(),
           })}\n\n`,
         );
