@@ -11,7 +11,6 @@ import { TransactionOrmEntity } from './src/infrastructure/persistence/typeorm/t
 import { WebhookEventOrmEntity } from './src/infrastructure/persistence/typeorm/webhook-event.orm-entity';
 
 const isProd = process.env.NODE_ENV === 'production';
-const isLocalDb = process.env.POSTGRES_HOST === 'localhost' || process.env.POSTGRES_HOST === 'db';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -28,6 +27,9 @@ export const AppDataSource = new DataSource({
   ],
   migrations: ['dist/src/migrations/*.js'],
   synchronize: false,
-  ssl: isLocalDb ? false : { rejectUnauthorized: false }, // SSL solo para RDS
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
   logging: !isProd,
 });

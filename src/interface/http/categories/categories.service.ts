@@ -13,5 +13,4 @@ export class CategoriesService {
   findAll() {
     return this.repo.find({ order: { name: 'ASC' } });
   }
-
 }
