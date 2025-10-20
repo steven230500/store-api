@@ -16,14 +16,12 @@ export class PaymentsController {
   @Post('checkout')
   @HttpCode(200)
   async checkout(@Body() dto: CheckoutDto) {
-    // 1) Crear transacción PENDING y número interno
     const pending = await this.createPending.execute({
       productId: dto.productId,
       amountInCents: dto.amountInCents,
       currency: CURRENCY.COP,
     });
 
-    // 2) Llamar Wompi
     const result = await this.processPayment.execute({
       amountInCents: dto.amountInCents,
       email: dto.email,
@@ -32,7 +30,6 @@ export class PaymentsController {
       installments: dto.installments,
     });
 
-    // 3) Actualizar estado + asignar producto + descontar stock
     const finalized = await this.finalizeTx.execute({
       transactionId: pending.id,
       status: result.status,

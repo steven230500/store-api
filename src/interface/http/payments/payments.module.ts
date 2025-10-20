@@ -14,7 +14,6 @@ import { WompiGateway } from '../../../infrastructure/gateways/wompi.gateway';
   imports: [TypeOrmModule.forFeature([ProductOrmEntity, TransactionOrmEntity])],
   controllers: [PaymentsController],
   providers: [
-    // repos
     TransactionRepositoryImpl,
     ProductRepositoryImpl,
     {
@@ -22,11 +21,9 @@ import { WompiGateway } from '../../../infrastructure/gateways/wompi.gateway';
       useExisting: TransactionRepositoryImpl,
     },
     { provide: 'ProductRepository', useExisting: ProductRepositoryImpl },
-    // use cases
     CreatePendingTransactionUC,
     ProcessPaymentWithWompiUC,
     FinalizeTransactionUC,
-    // gateway
     WompiGateway,
     { provide: 'PaymentGateway', useExisting: WompiGateway },
   ],

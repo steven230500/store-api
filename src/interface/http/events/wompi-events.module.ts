@@ -17,18 +17,15 @@ import { TransactionsModule } from '../transactions/transactions.module';
   ],
   controllers: [WompiEventsController],
   providers: [
-    // Implementaciones concretas (deben tener @Injectable())
     TransactionRepositoryImpl,
     ProductRepositoryImpl,
 
-    // Puertos del dominio → adapters concretos
     {
       provide: REPOSITORY_TOKENS.Transaction,
       useExisting: TransactionRepositoryImpl,
     },
     { provide: REPOSITORY_TOKENS.Product, useExisting: ProductRepositoryImpl },
 
-    // Caso de uso
     FinalizeTransactionUC,
   ],
 })
