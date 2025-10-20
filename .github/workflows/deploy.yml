@@ -11,7 +11,7 @@ permissions:
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   ECR_REPO: ${{ vars.ECR_REPO }}
-  ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+  ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
   SERVICE_ARN: ${{ vars.APP_RUNNER_SERVICE_ARN }}
 
 jobs:
