@@ -1,0 +1,60 @@
+{
+  "family": "store-api-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "3072",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::126514371137:role/ecs-store-api-role",
+  "taskRoleArn": "arn:aws:iam::126514371137:role/ecs-store-api-role",
+  "containerDefinitions": [
+    {
+      "name": "store-api",
+      "image": "IMAGE_URI",
+      "essential": true,
+      "workingDirectory": "/app",
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp",
+          "name": "store-api-80-tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/store-api-task",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "environment": [
+        { "name": "POSTGRES_USER", "value": "postgres" },
+        { "name": "WOMPI_EVENTS_KEY", "value": "test_events_yymKclKExflLbIo06KDsqV0G0L2EAxfb" },
+        { "name": "WOMPI_PRIVATE_KEY", "value": "prv_test_fuDT2ce1HJPlTLp8ECu7cojabYhRCiG6" },
+        { "name": "PORT", "value": "80" },
+        { "name": "POSTGRES_HOST", "value": "store-db.chk8om2u24w7.us-east-2.rds.amazonaws.com" },
+        { "name": "POSTGRES_PASSWORD", "value": "LfT_dev_2025!" },
+        { "name": "POSTGRES_PORT", "value": "5433" },
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "POSTGRES_DB", "value": "store" },
+        { "name": "WOMPI_BASE_URL", "value": "https://sandbox.wompi.co/v1" },
+        { "name": "WOMPI_INTEGRITY_KEY", "value": "test_integrity_LT09sSTOvoRX5Vc4B0OO8IVorG78Q5Dq" },
+        { "name": "WOMPI_PUBLIC_KEY", "value": "pub_test_IbnFbFkj10qIbfni9b8FVXK100oqowVc" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -fsS http://localhost/health/liveness || exit 1"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}
