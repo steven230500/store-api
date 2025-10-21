@@ -54,10 +54,12 @@ export class TransactionsController {
 
     const heartbeat = setInterval(() => {
       if (!res.destroyed) {
+        // Enviar heartbeat con estado actual (sin consulta BD para evitar overhead)
         res.write(
           `data: ${JSON.stringify({
             type: 'heartbeat',
             transactionId: tx.id,
+            currentStatus: tx.status, // Usar estado en memoria
             timestamp: new Date().toISOString(),
           })}\n\n`,
         );
