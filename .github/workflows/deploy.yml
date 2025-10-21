@@ -88,31 +88,70 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 1) Toma una tarea RUNNING del servicio
-          TASK_ARN=$(aws ecs list-tasks \
-            --cluster "$ECS_CLUSTER" \
-            --service-name "$ECS_SERVICE" \
-            --desired-status RUNNING \
-            --query 'taskArns[0]' --output text)
+          NAME="api.stevenpatino.dev"
 
-          if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-            echo "No hay tareas RUNNING aún"; exit 1
+          echo "Esperando a que el servicio tenga al menos 1 tarea RUNNING..."
+          # Espera hasta 5 min (30 intentos * 10s) a que aparezca una tarea RUNNING
+          for i in $(seq 1 30); do
+            TASK_ARN=$(aws ecs list-tasks \
+              --cluster "$ECS_CLUSTER" \
+              --service-name "$ECS_SERVICE" \
+              --desired-status RUNNING \
+              --query 'taskArns[0]' --output text || true)
+
+            if [ -n "${TASK_ARN:-}" ] && [ "$TASK_ARN" != "None" ]; then
+              echo "TASK_ARN: $TASK_ARN"
+              break
+            fi
+            echo "Aún no hay tarea RUNNING. Reintentando ($i/30)..."
+            sleep 10
+          done
+
+          if [ -z "${TASK_ARN:-}" ] || [ "$TASK_ARN" = "None" ]; then
+            echo "No se encontró una tarea RUNNING tras esperar. Abortando."
+            exit 1
           fi
 
-          # 2) Obtiene el ENI de la tarea y su IP pública
+          echo "Intentando obtener ENI desde attachments..."
           ENI_ID=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
-            --query "tasks[0].attachments[?type=='ElasticNetworkInterface'].details[?name=='networkInterfaceId'].value | [0]" \
-            --output text)
+            --query "tasks[0].attachments[?type=='ElasticNetworkInterface'].details[?name=='networkInterfaceId'] | [0][0].value" \
+            --output text || true)
 
+          if [ -z "${ENI_ID:-}" ] || [ "$ENI_ID" = "None" ]; then
+            echo "No se obtuvo ENI por attachments. Buscando por IP privada del contenedor..."
+            PRIV_IP=$(aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks "$TASK_ARN" \
+              --query "tasks[0].containers[0].networkInterfaces[0].privateIpv4Address" \
+              --output text || true)
+
+            if [ -z "${PRIV_IP:-}" ] || [ "$PRIV_IP" = "None" ]; then
+              echo "No se pudo obtener la IP privada. Abortando."
+              exit 1
+            fi
+
+            ENI_ID=$(aws ec2 describe-network-interfaces \
+              --filters "Name=private-ip-address,Values=$PRIV_IP" \
+              --query 'NetworkInterfaces[0].NetworkInterfaceId' \
+              --output text || true)
+          fi
+
+          if [ -z "${ENI_ID:-}" ] || [ "$ENI_ID" = "None" ]; then
+            echo "No se pudo determinar el ENI. Abortando."
+            exit 1
+          fi
+
+          echo "ENI: $ENI_ID"
           PUBLIC_IP=$(aws ec2 describe-network-interfaces \
             --network-interface-ids "$ENI_ID" \
             --query 'NetworkInterfaces[0].Association.PublicIp' \
-            --output text)
+            --output text || true)
 
-          echo "Public IP actual: $PUBLIC_IP"
+          if [ -z "${PUBLIC_IP:-}" ] || [ "$PUBLIC_IP" = "None" ]; then
+            echo "No hay IP pública asociada al ENI. Verifica que el servicio tenga assignPublicIp=ENABLED."
+            exit 1
+          fi
 
-          # 3) Upsert del registro A en Cloudflare (proxied=false para evitar 522 con puerto 80)
-          NAME="api.stevenpatino.dev"
+          echo "IP pública: $PUBLIC_IP"
+          echo "Actualizando Cloudflare..."
 
           REC_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records?type=A&name=${NAME}" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
@@ -134,4 +173,4 @@ jobs:
               | jq .
           fi
 
-          echo "Listo: api.stevenpatino.dev -> ${PUBLIC_IP}"
+          echo "Listo: ${NAME} -> ${PUBLIC_IP}"
