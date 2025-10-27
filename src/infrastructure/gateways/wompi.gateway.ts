@@ -199,4 +199,27 @@ export class WompiGateway implements PaymentGateway {
       };
     }
   }
+
+  async getTransactionStatus(reference: string): Promise<PaymentStatus> {
+    try {
+      const { data } = await this.http.get<WompiTransactionResponse>(
+        `/transactions/${reference}`,
+        { headers: { Authorization: `Bearer ${this.prv}` } },
+      );
+
+      const wompiStatus = data.data.status ?? 'ERROR';
+      const status: PaymentStatus =
+        wompiStatus === 'APPROVED'
+          ? PAYMENT_STATUS.APPROVED
+          : wompiStatus === 'DECLINED'
+            ? PAYMENT_STATUS.DECLINED
+            : wompiStatus === 'PENDING'
+              ? PAYMENT_STATUS.PENDING
+              : PAYMENT_STATUS.ERROR;
+
+      return status;
+    } catch {
+      return PAYMENT_STATUS.ERROR;
+    }
+  }
 }

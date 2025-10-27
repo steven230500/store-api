@@ -3,6 +3,7 @@ import { PaymentsController } from './payments.controller';
 import { CreatePendingTransactionUC } from '../../../application/use-cases/create-pending-transaction.uc';
 import { ProcessPaymentWithWompiUC } from '../../../application/use-cases/process-payment-with-wompi.uc';
 import { FinalizeTransactionUC } from '../../../application/use-cases/finalize-transaction.uc';
+import { REPOSITORY_TOKENS } from '../../../domain/repositories/tokens';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
@@ -36,6 +37,23 @@ describe('PaymentsController', () => {
             execute: jest.fn().mockResolvedValue({
               id: 'test-tx-id',
               status: 'APPROVED',
+            }),
+          },
+        },
+        {
+          provide: 'PaymentGateway',
+          useValue: {
+            getTransactionStatus: jest.fn().mockResolvedValue('APPROVED'),
+          },
+        },
+        {
+          provide: REPOSITORY_TOKENS.Transaction,
+          useValue: {
+            findByReference: jest.fn().mockResolvedValue({
+              id: 'test-tx-id',
+              reference: 'TX-123',
+              status: 'PENDING',
+              productId: 'test-product',
             }),
           },
         },
