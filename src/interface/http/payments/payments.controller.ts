@@ -38,27 +38,37 @@ export class PaymentsController {
   @Post('checkout')
   @HttpCode(200)
   async checkout(@Body() dto: CheckoutDto) {
-    const pending = await this.createPending.execute({
-      productId: dto.productId,
-      amountInCents: dto.amountInCents,
-      currency: CURRENCY.COP,
-    });
+    try {
+      console.log('PAYMENT_CHECKOUT_START=', JSON.stringify(dto));
 
-    const result = await this.processPayment.execute({
-      amountInCents: dto.amountInCents,
-      email: dto.email,
-      card: dto.card,
-      reference: pending.reference,
-      installments: dto.installments,
-    });
+      const pending = await this.createPending.execute({
+        productId: dto.productId,
+        amountInCents: dto.amountInCents,
+        currency: CURRENCY.COP,
+      });
+      console.log('PAYMENT_PENDING_CREATED=', JSON.stringify(pending));
 
-    const finalized = await this.finalizeTx.execute({
-      transactionId: pending.id,
-      status: result.status,
-      productId: dto.productId,
-    });
+      const result = await this.processPayment.execute({
+        amountInCents: dto.amountInCents,
+        email: dto.email,
+        card: dto.card,
+        reference: pending.reference,
+        installments: dto.installments,
+      });
+      console.log('PAYMENT_WOMPI_RESULT=', JSON.stringify(result));
 
-    return { transaction: finalized, wompi: result };
+      const finalized = await this.finalizeTx.execute({
+        transactionId: pending.id,
+        status: result.status,
+        productId: dto.productId,
+      });
+      console.log('PAYMENT_FINALIZED=', JSON.stringify(finalized));
+
+      return { transaction: finalized, wompi: result };
+    } catch (error) {
+      console.error('PAYMENT_CHECKOUT_ERROR=', error);
+      throw error;
+    }
   }
 
   @Get(':reference/status')

@@ -131,11 +131,19 @@ export class WompiGateway implements PaymentGateway {
   }
 
   async tokenizeCard(dto: TokenizeCardDto): Promise<{ token: string }> {
+    const normalizedDto = {
+      ...dto,
+      exp_year:
+        dto.exp_year.length === 4 ? dto.exp_year.slice(-2) : dto.exp_year,
+    };
+
+    console.log('WOMPI_TOKENIZE_REQUEST=', JSON.stringify(normalizedDto));
     const { data } = await this.http.post<WompiTokenizeResponse>(
       '/tokens/cards',
-      dto,
+      normalizedDto,
       { headers: { Authorization: `Bearer ${this.pub}` } },
     );
+    console.log('WOMPI_TOKENIZE_RESPONSE=', JSON.stringify(data));
 
     return { token: data.data.id };
   }
